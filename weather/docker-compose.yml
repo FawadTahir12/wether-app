@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  weather:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - ./.env  # You can use an environment file to manage your Django project settings
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin1234
+
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"

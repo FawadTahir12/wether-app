@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Weather Updates</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+   
+    <div class="container">
+        <h1 class="heading">Your Favorite Cities</h1>
+        <div class="weather">
+          <div class="left">
+            <h2 class="temp" id="temperature"></h2>
+            <h2 class="city" id="cityName"></h2>
+          </div>
+          <div class="right">
+            <div class="icon">
+              <p><img id="weatherIcon"src="" width="120px"></p>
+            </div>
+            <div class="condition">
+              <p id='description'></p>
+              <p id='humidity'></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    <script>
+    
+        const socket = new WebSocket("ws://127.0.0.1:8000/ws/favorite/");
+
+        socket.onopen = function(event) {
+            console.log("WebSocket connection established!");
+            
+            socket.send(JSON.stringify({ action: 'get_favorite_cities' }));
+        };
+
+
+        socket.onmessage = function(event) {
+            const weatherData = JSON.parse(event.data);
+    
+            updateWeatherUI(weatherData);
+        };
+
+        function updateWeatherUI(weatherData) {
+            document.getElementById('cityName').textContent = weatherData.city;
+            document.getElementById('temperature').textContent = weatherData.temperature + '°C';
+            const imgElement = document.getElementById('weatherIcon');
+            const iconUrl = `http://${weatherData.icon}`;
+            imgElement.src = iconUrl;
+            document.getElementById('description').textContent = weatherData.condition 
+            document.getElementById('humidity').textContent = 'Humidity ' + weatherData.humidity + '%' 
+
+
+
+        }
+
+
+        document.getElementById('city-search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const cityInput = document.getElementById('city');
+            const cityName = cityInput.value.trim();
+            if (cityName !== '') {
+                socket.send(JSON.stringify({ city: cityName }));
+                cityInput.value = ''; 
+            }
+        });
+    </script> 
+</body>
+</html>
+
+
+
+
