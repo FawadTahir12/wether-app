@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Weather Updates</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+   
+    <div class="container">
+        <h1 class="heading">Weather App</h1>
+        
+        <form id='city-search-form'>
+          {% csrf_token %}
+          <input type="text" name="city"  id="city" placeholder="Enter City">
+          <button type="submit" class="btn">Search</button>
+        </form>
+        <div class="weather">
+          <div class="left">
+            <h2 class="temp" id="temperature"></h2>
+            <h2 class="city" id="cityName"></h2>
+            <button id="addToFavoriteBtn" class="btn">Add to Favorite</button>
+          </div>
+          <div class="right">
+            <div class="icon">
+              <p><img id="weatherIcon"src="" width="120px"></p>
+            </div>
+            <div class="condition">
+              <p id='description'></p>
+              <p id='humidity'></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        
+        const socket = new WebSocket("ws://127.0.0.1:8000/ws/search/");
+        const socket_favorite = new WebSocket("ws://127.0.0.1:8000/ws/favorite/");
+
+        
+        socket.onmessage = function(event) {
+            const weatherData = JSON.parse(event.data);
+    
+            updateWeatherUI(weatherData);
+        };
+
+        
+        function updateWeatherUI(weatherData) {
+            document.getElementById('cityName').textContent = weatherData.city;
+            document.getElementById('temperature').textContent = weatherData.temperature + '°C';
+            const imgElement = document.getElementById('weatherIcon');
+            const iconUrl = `http://${weatherData.icon}`;
+            imgElement.src = iconUrl;
+            document.getElementById('description').textContent = weatherData.condition 
+            document.getElementById('humidity').textContent = 'Humidity ' + weatherData.humidity + '%' 
+           
+
+
+
+        }
+        
+        document.getElementById('addToFavoriteBtn').addEventListener('click', function() {
+          const favariteCityname = document.getElementById("cityName").innerHTML;
+          addToFavorite(favariteCityname);
+      });
+
+        function addToFavorite(cityName) {
+          socket_favorite.send(JSON.stringify({ action: 'add_favorite', city: cityName }));
+      }
+
+
+        document.getElementById('city-search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const cityInput = document.getElementById('city');
+            const cityName = cityInput.value.trim();
+            if (cityName !== '') {
+                socket.send(JSON.stringify({ action: 'fetch_data', city: cityName }));
+                cityInput.value = ''; 
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
