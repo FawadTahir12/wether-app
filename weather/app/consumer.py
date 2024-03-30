@@ -80,29 +80,46 @@ class FavoriteCityConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({'status': 'success', 'message': f'{city_name} added to favorites.'}))
         elif action == 'delete_favorite':
             city_name = data.get('city')
-            await self.delete_favorite(city_name)
+            response  = await self.delete_favorite(city_name)
+            await self.send(text_data=json.dumps({'status': response.get('status'), 'message': response.get('message')}))
         elif action == 'get_favorite_cities':
             favorite_cities = await self.send_favorite_cities()
-            await self.send(text_data=json.dumps({'action': 'update_favorite_cities', 'favorite_cities': list('hello')}))
+            await self.send(text_data=json.dumps({'action': 'Favorite Cities', 'favorite_cities': list(favorite_cities)}))
     
-    @database_sync_to_async
-    def add_favorite(self, city_name):
-        try:
-            favorite_city = FavoriteCity.objects.create(city_name=city_name)
+    # @database_sync_to_async
+    # def add_favorite(self, city_name):
+    #     try:
+    #         favorite_city = FavoriteCity.objects.create(city_name=city_name)
+    #     except Exception as e:
+    #         self.send(text_data=json.dumps({'status': 'error', 'message': str(e)}))
+    
+    
+    async def add_favorite(self, city_name):
+        try:          
+            await FavoriteCity.objects.acreate(city_name=city_name)
         except Exception as e:
             self.send(text_data=json.dumps({'status': 'error', 'message': str(e)}))
+    
+    # @database_sync_to_async
+    # def delete_favorite(self, city_name):
+    #     try:
+    #         FavoriteCity.objects.filter(city_name=city_name).delete()
+    #         return {'status': 'success', 'message': f'{city_name} removed from favorites.'}
+    #     except Exception as e:
+    #         return {'status': 'error', 'message': str(e)}
+        
 
     async def delete_favorite(self, city_name):
         try:
-            FavoriteCity.objects.filter(city_name=city_name).delete()
-            await self.send(text_data=json.dumps({'status': 'success', 'message': f'{city_name} removed from favorites.'}))
+            print('in delee')
+            await FavoriteCity.objects.filter(city_name=city_name).adelete()
+            return {'status': 'success', 'message': f'{city_name} removed from favorites.'}
         except Exception as e:
-            await self.send(text_data=json.dumps({'status': 'error', 'message': str(e)}))
+            return {'status': 'error', 'message': str(e)}
     
     
     @database_sync_to_async      
     def send_favorite_cities(self):
-        favorite_cities = FavoriteCity.objects.all().values_list('city_name', flat=True)
-        return favorite_cities
+        return list(FavoriteCity.objects.all().values_list('city_name', flat=True))
         
    
